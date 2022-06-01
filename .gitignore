@@ -1,0 +1,10 @@
+/crawl/.idea/
+/crawl/bin/
+/crawl/pkg/
+/crawl/src/go.sum
+/DbExample/.idea/
+/DbExample/bin/
+/DbExample/pkg/
+/DbExample/src/go.sum
+/TimeCalc/.idea/
+/TimeCalc/bin/
