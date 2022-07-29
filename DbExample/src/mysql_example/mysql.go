@@ -5,9 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"os"
 	"strings"
+	"time"
+	"xorm.io/xorm"
 )
 
 const (
@@ -22,6 +26,23 @@ type userInfo struct {
 	id       int
 	username string
 	password string
+}
+
+type student struct {
+	gorm.Model
+	Name  string
+	Age   int
+	Email string
+}
+
+type teacher struct {
+	Id        int64
+	Name      string
+	Age       int
+	Email     string
+	CreatedAt time.Time `xorm:"created"`
+	UpdatedAt time.Time `xorm:"updated"`
+	DeletedAt time.Time `xorm:"deleted"`
 }
 
 func checkErr(err error) {
@@ -156,6 +177,165 @@ func Connect() {
 				} else {
 					fmt.Println("delete data success.")
 				}
+			}
+		case disconect:
+			return
+		default:
+			fmt.Println("Unsupport option.")
+		}
+	}
+}
+
+func ConnectByGorm() {
+	dsn := "root:woaichx199298@tcp(192.168.9.53:3306)/go_db?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Connect database success by gorm.")
+	err = db.AutoMigrate(&student{})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var cmd int
+	for {
+		fmt.Println("Please select your operation:")
+		fmt.Println("1、Insert  2、Delete  3、Update  4、Retrieve  5、Disconnect")
+		fmt.Scan(&cmd)
+		switch cmd {
+		case insert:
+			{
+				var stu student
+				fmt.Print("Enter name:")
+				fmt.Scan(&stu.Name)
+				fmt.Print("Enter age:")
+				fmt.Scan(&stu.Age)
+				fmt.Print("Enter email:")
+				fmt.Scan(&stu.Email)
+				result := db.Create(&stu)
+				fmt.Printf("affected %d record\n", result.RowsAffected)
+			}
+		case retrieve:
+			{
+				var stus []student
+				result := db.Find(&stus)
+				fmt.Printf("find %d record\n", result.RowsAffected)
+				fmt.Printf("%-5s      %-16s      %-5s      %-16s\n", "id", "name", "age", "email")
+				for _, info := range stus {
+					fmt.Printf("%-5d      %-16s      %-5d      %-16s\n", info.ID, info.Name, info.Age, info.Email)
+				}
+			}
+		case update:
+			{
+				var id int
+				var stu student
+				fmt.Print("Enter id you want to update:")
+				fmt.Scan(&id)
+				db.First(&stu, id)
+				fmt.Print("Enter new age:")
+				fmt.Scan(&stu.Age)
+				result := db.Save(&stu)
+				fmt.Printf("update %d record\n", result.RowsAffected)
+			}
+		case delete:
+			{
+				var deleteID int
+				fmt.Print("Enter id you want to delete:")
+				fmt.Scan(&deleteID)
+				result := db.Unscoped().Delete(&student{}, deleteID)
+				fmt.Printf("delete %d record\n", result.RowsAffected)
+			}
+		case disconect:
+			return
+		default:
+			fmt.Println("Unsupport option.")
+		}
+	}
+}
+
+func ConnectByXorm() {
+	dsn := "root:woaichx199298@tcp(192.168.9.53:3306)/go_db?charset=utf8"
+	db, err := xorm.NewEngine("mysql", dsn)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+	err = db.Ping()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Connect database success by xorm.")
+	err = db.Sync2(new(teacher))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var cmd int
+	for {
+		fmt.Println("Please select your operation:")
+		fmt.Println("1、Insert  2、Delete  3、Update  4、Retrieve  5、Disconnect")
+		fmt.Scan(&cmd)
+		switch cmd {
+		case insert:
+			{
+				var tec teacher
+				fmt.Print("Enter name:")
+				fmt.Scan(&tec.Name)
+				fmt.Print("Enter age:")
+				fmt.Scan(&tec.Age)
+				fmt.Print("Enter email:")
+				fmt.Scan(&tec.Email)
+				affected, err := db.Insert(&tec)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				fmt.Printf("affected %d record\n", affected)
+			}
+		case retrieve:
+			{
+				var tecs []teacher
+				err := db.Find(&tecs)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				fmt.Printf("find %d record\n", len(tecs))
+				fmt.Printf("%-5s      %-16s      %-5s      %-16s\n", "id", "name", "age", "email")
+				for _, info := range tecs {
+					fmt.Printf("%-5d      %-16s      %-5d      %-16s\n", info.Id, info.Name, info.Age, info.Email)
+				}
+			}
+		case update:
+			{
+				var id int
+				var tec teacher
+				fmt.Print("Enter id you want to update:")
+				fmt.Scan(&id)
+				fmt.Print("Enter new age:")
+				fmt.Scan(&tec.Age)
+				affected, err := db.ID(id).Update(&tec)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				fmt.Printf("update %d record\n", affected)
+			}
+		case delete:
+			{
+				var deleteID int
+				fmt.Print("Enter id you want to delete:")
+				fmt.Scan(&deleteID)
+				affected, err := db.ID(deleteID).Unscoped().Delete(&teacher{})
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				fmt.Printf("delete %d record\n", affected)
 			}
 		case disconect:
 			return
