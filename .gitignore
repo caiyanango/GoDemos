@@ -9,7 +9,8 @@
 /TimeCalc/.idea/
 /TimeCalc/bin/
 /BeegoTest/.idea/
-/BeegoTest/bin/blog.exe
+/BeegoTest/bin/
 /BeegoTest/pkg
+/BeegoTest/src/blog/go.sum
 /BeegoTest/src/blog/blog.exe
 /BeegoTest/src/blog/lastupdate.tmp
