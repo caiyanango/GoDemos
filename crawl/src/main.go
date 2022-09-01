@@ -1,23 +1,73 @@
 package main
 
 import (
-	"crawl/regexptest"
+	"bufio"
+	"crawl/crawlTest"
+	"flag"
 	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
+	"log"
+	"os"
+	"time"
 )
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
-	/*c := colly.NewCollector()
-	c.OnHTML("a", func(element *colly.HTMLElement) {
-		element.Request.Visit(element.Attr("href"))
-	})
-	c.OnRequest(func(request *colly.Request) {
-		fmt.Println("Visiting", request.URL)
-	})
-	c.Visit("http://49.5.6.85:7777")*/
+	crawlMode := flag.String("mode", "regext", "specify the crawler method")
+	flag.Parse()
+	fmt.Printf("使用的爬虫模式: %s\n", *crawlMode)
 	var start, end int
 	fmt.Print("请输入爬虫起始页:")
-	fmt.Scanf("%d\r\n", &start)
+	fmt.Scanln(&start)
 	fmt.Print("请输入爬虫结束页:")
-	fmt.Scanf("%d\r\n", &end)
-	regexptest.CrawlPage(start, end)
+	fmt.Scanln(&end)
+	timeStart := time.Now()
+	crawlTest.CrawlPage(start, end, crawlMode)
+	fmt.Printf("用时%.2f秒\n", time.Since(timeStart).Seconds())
+	StopUntil("请按任意键退出", "", false)
+	//StopUntil("请输入exit退出", "exit", true)
+	fmt.Print("\n")
+}
+
+func StopUntil(hint string, trigger string, repeat bool) error {
+	pressLen := len([]rune(trigger))
+	if trigger == "" {
+		pressLen = 1
+	}
+	fd := int(os.Stdin.Fd())
+	if hint != "" {
+		fmt.Print(hint)
+	}
+	state, err := terminal.MakeRaw(fd)
+	if err != nil {
+		return err
+	}
+	defer terminal.Restore(fd, state)
+	inputReader := bufio.NewReader(os.Stdin)
+	i := 0
+	for {
+		b, _, err := inputReader.ReadRune()
+		if err != nil {
+			return err
+		}
+		if trigger == "" {
+			break
+		}
+		if b == []rune(trigger)[i] {
+			i++
+			if i == pressLen {
+				break
+			}
+			continue
+		}
+		i = 0
+		if hint != "" && repeat {
+			fmt.Print("\n")
+			fmt.Print(hint)
+		}
+	}
+	return nil
 }
