@@ -7,3 +7,5 @@
 /blog/go.sum
 /blog/blog.exe
 /blog/lastupdate.tmp
+gRPCTest/go.sum
+gRPCTest/.idea/
